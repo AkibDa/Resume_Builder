@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4">Customize Your Resume</h2>
+                <form method="POST" action="{{ url_for('generate_resume') }}" id="resumeForm">
+                    <div class="mb-3">
+                        <label for="resume" class="form-label">Your Resume</label>
+                        <textarea class="form-control" id="resume" name="resume" rows="6" required
+                            placeholder="Paste your resume here..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="job_description" class="form-label">Job Description</label>
+                        <textarea class="form-control" id="job_description" name="job_description" rows="6" required
+                            placeholder="Paste the job description here..."></textarea>
+                    </div>
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-magic me-2"></i>Generate Custom Resume
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3">Generating your customized resume...</p>
+        </div>
+
+        <div class="result-area" id="resultArea">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title">Generated Resume</h3>
+                    <div id="generatedResume" class="mt-3"></div>
+                    <div class="text-center mt-3">
+                        <button class="btn btn-success" onclick="downloadResume()">
+                            <i class="fas fa-download me-2"></i>Download Resume
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#resumeForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        // Show loading spinner
+        $('#loading').show();
+        $('#resultArea').hide();
+        
+        // Get form data
+        const formData = {
+            resume: $('#resume').val(),
+            job_description: $('#job_description').val()
+        };
+        
+        // Send AJAX request
+        $.ajax({
+            url: $(this).attr('action'),
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(formData),
+            success: function(response) {
+                $('#loading').hide();
+                $('#generatedResume').html(response.resume.replace(/\n/g, '<br>'));
+                $('#resultArea').show();
+            },
+            error: function(xhr) {
+                $('#loading').hide();
+                alert('Error generating resume. Please try again.');
+            }
+        });
+    });
+});
+
+function downloadResume() {
+    const content = $('#generatedResume').text();
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'customized-resume.txt';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+}
+</script>
+{% endblock %} 
