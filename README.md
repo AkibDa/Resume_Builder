@@ -1,15 +1,16 @@
 # Resume Builder
 
-A Python-based tool that helps users create professional resumes quickly and efficiently. This command-line application provides a straightforward way to generate well-formatted resumes without the need for complex design software.
+A web-based application that helps users create professional resumes with ease. This project offers a user-friendly interface for building, editing, and exporting resumes in various formats.
 
 ## Features
 
-- **Simple Command-line Interface**: Easy-to-use commands for resume creation
-- **Template-based Generation**: Pre-defined templates for professional resume layouts
-- **Section Customization**: Add personal information, education, experience, skills, and more
-- **Export to PDF**: Generate professional-looking PDF resumes
-- **Data Persistence**: Save your resume data for future updates
-- **Formatting Options**: Customize fonts, spacing, and section layouts
+- **User-friendly Interface**: Intuitive design for easy resume creation
+- **Multiple Templates**: Choose from a variety of professional resume templates
+- **Section Management**: Easily add, edit, or remove sections such as education, experience, skills, etc.
+- **Real-time Preview**: See changes to your resume in real-time
+- **Export Options**: Download your resume in PDF, DOCX, or HTML formats
+- **Save & Load**: Save your progress and return to edit later
+- **Responsive Design**: Works on desktop and mobile devices
 
 ## Installation
 
@@ -23,43 +24,34 @@ A Python-based tool that helps users create professional resumes quickly and eff
    cd Resume_Builder
    ```
 
-3. Install requirements:
+3. Install dependencies:
    ```
-   pip install -r requirements.txt
+   npm install
    ```
+
+4. Start the development server:
+   ```
+   npm start
+   ```
+
+5. Open your browser and go to `http://localhost:3000`
+
+## Technologies Used
+
+- React.js for the frontend
+- Node.js and Express for the backend
+- MongoDB for database
+- PDF.js for PDF generation
+- Bootstrap for styling
 
 ## Usage
 
-Run the main script:
-```
-python main.py
-```
-
-Follow the interactive prompts to:
-1. Enter your personal information
-2. Add education details
-3. Include work experience
-4. List skills and qualifications
-5. Select a template
-6. Generate your resume as a PDF file
-
-## Dependencies
-
-- Python 3.6+
-- fpdf (for PDF generation)
-- PyYAML (for configuration)
-- Other dependencies listed in requirements.txt
-
-## Example
-
-```
-$ python main.py
-Welcome to Resume Builder!
-Please enter your name: John Doe
-Please enter your email: john.doe@example.com
-...
-Your resume has been generated as 'John_Doe_Resume.pdf'
-```
+1. Create an account or log in
+2. Choose a template
+3. Fill in your information in the provided sections
+4. Preview your resume
+5. Make any necessary adjustments
+6. Export your resume in your preferred format
 
 ## Contributing
 
@@ -84,5 +76,5 @@ Project Link: [https://github.com/AkibDa/Resume_Builder](https://github.com/Akib
 ## Acknowledgments
 
 - Thanks to all contributors who have helped shape this project
-- Inspiration from other resume generation tools
-- Special thanks to the Python community for providing great libraries
+- Inspiration from other resume builder tools
+- Special thanks to the open-source community
