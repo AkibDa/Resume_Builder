@@ -44,7 +44,7 @@ Contributions are welcome! If you have any ideas for improvements or find any bu
 
 ## Author
 
-* Akib Da
+* Sk Akib Ahammed [ahammedskakib@gmail.com]
 
 ## License
 
