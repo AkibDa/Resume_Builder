@@ -49,11 +49,14 @@ MAX_TOKENS = 1024
 
 # Green job categories and keywords
 GREEN_JOB_CATEGORIES = {
-    "renewable_energy": ["solar", "wind", "hydro", "geothermal", "renewable"],
-    "sustainability": ["sustainable", "environmental", "eco-friendly", "green"],
-    "conservation": ["conservation", "wildlife", "biodiversity", "ecosystem"],
-    "clean_tech": ["clean technology", "green technology", "smart grid", "energy efficiency"],
-    "waste_management": ["recycling", "waste reduction", "circular economy", "zero waste"]
+    "renewable_energy": ["solar", "wind", "hydro", "geothermal", "renewable", "clean energy", "solar panel", "wind turbine", "energy storage"],
+    "sustainability": ["sustainable", "environmental", "eco-friendly", "green", "carbon footprint", "net zero", "sustainability", "environmental impact"],
+    "conservation": ["conservation", "wildlife", "biodiversity", "ecosystem", "habitat", "endangered species", "environmental protection", "natural resources"],
+    "clean_tech": ["clean technology", "green technology", "smart grid", "energy efficiency", "electric vehicles", "battery technology", "smart home", "green building"],
+    "waste_management": ["recycling", "waste reduction", "circular economy", "zero waste", "composting", "wastewater", "landfill", "waste diversion"],
+    "climate_action": ["climate change", "carbon reduction", "emissions", "climate policy", "carbon trading", "climate adaptation", "climate mitigation"],
+    "green_transportation": ["electric vehicles", "public transit", "bicycle infrastructure", "sustainable transport", "green logistics", "fleet electrification"],
+    "sustainable_agriculture": ["organic farming", "permaculture", "sustainable food", "local food", "food security", "regenerative agriculture", "vertical farming"]
 }
 
 # Common ATS keywords by industry
@@ -244,23 +247,49 @@ def match_job_opportunities(resume_keywords: List[str], job_description: str) ->
     try:
         matches = []
         job_desc_lower = job_description.lower()
+        resume_keywords_lower = [k.lower() for k in resume_keywords]
         
         # Check each industry's keywords
         for industry, keywords in ATS_KEYWORDS.items():
             matching_keywords = [keyword for keyword in keywords if keyword in job_desc_lower]
-            if matching_keywords:
-                # Calculate match percentage
-                match_percentage = len(matching_keywords) / len(keywords) * 100
+            resume_matches = [keyword for keyword in keywords if keyword in resume_keywords_lower]
+            
+            if matching_keywords or resume_matches:
+                # Calculate match percentages
+                job_match_percentage = len(matching_keywords) / len(keywords) * 100 if matching_keywords else 0
+                resume_match_percentage = len(resume_matches) / len(keywords) * 100 if resume_matches else 0
+                overall_match = (job_match_percentage + resume_match_percentage) / 2
+                
+                # Generate detailed recommendations
+                recommendation = f"This position has a {round(overall_match, 2)}% overall match with your experience in {industry.replace('_', ' ')}. "
+                
+                if job_match_percentage > 0:
+                    recommendation += f"\n- Job requirements match: {round(job_match_percentage, 2)}% "
+                    recommendation += f"(matching keywords: {', '.join(matching_keywords)})"
+                
+                if resume_match_percentage > 0:
+                    recommendation += f"\n- Your experience match: {round(resume_match_percentage, 2)}% "
+                    recommendation += f"(matching keywords: {', '.join(resume_matches)})"
+                
+                if overall_match > 70:
+                    recommendation += "\n- Strong match: Your experience aligns well with the job requirements."
+                elif overall_match > 40:
+                    recommendation += "\n- Moderate match: Consider highlighting relevant experience and skills."
+                else:
+                    recommendation += "\n- Limited match: Focus on transferable skills and relevant achievements."
                 
                 matches.append({
                     "industry": industry.replace("_", " ").title(),
-                    "match_percentage": round(match_percentage, 2),
+                    "overall_match_percentage": round(overall_match, 2),
+                    "job_match_percentage": round(job_match_percentage, 2),
+                    "resume_match_percentage": round(resume_match_percentage, 2),
                     "matching_keywords": matching_keywords,
-                    "recommendation": f"This position has a {round(match_percentage, 2)}% match with your experience in {industry.replace('_', ' ')}."
+                    "resume_matching_keywords": resume_matches,
+                    "recommendation": recommendation
                 })
         
-        # Sort by match percentage
-        matches.sort(key=lambda x: x["match_percentage"], reverse=True)
+        # Sort by overall match percentage
+        matches.sort(key=lambda x: x["overall_match_percentage"], reverse=True)
         return matches
     except Exception as e:
         logger.error(f"Error matching job opportunities: {str(e)}")
@@ -295,11 +324,23 @@ def optimize_for_ats(resume: str, job_description: str) -> str:
         {resume}
         
         Please:
-        1. Incorporate relevant keywords naturally
-        2. Improve grammar and phrasing
-        3. Use action verbs and quantifiable achievements
-        4. Maintain professional tone
+        1. Incorporate relevant keywords naturally and contextually
+        2. Improve grammar, punctuation, and sentence structure
+        3. Use strong action verbs and quantifiable achievements
+        4. Maintain professional tone and clarity
         5. Keep the same information but make it more impactful
+        6. Ensure proper formatting and section organization
+        7. Add industry-specific terminology where appropriate
+        8. Remove any jargon or unclear language
+        9. Make achievements more specific and measurable
+        10. Ensure consistency in tense and voice throughout
+        
+        Format the output with clear sections:
+        - Professional Summary
+        - Work Experience
+        - Education
+        - Skills
+        - Additional Qualifications
         """
         
         # Generate optimized content
@@ -345,7 +386,11 @@ def generate_custom_resume(resume: str, job_description: str) -> Optional[str]:
             base_url="https://api.groq.com"
         )
         
-        # Prepare the prompt
+        # Extract keywords and analyze matches
+        resume_keywords = extract_keywords(resume)
+        job_matches = match_job_opportunities(resume_keywords, job_description)
+        
+        # Prepare the prompt with detailed matching information
         prompt = f"""
         Create a customized resume based on this optimized version and job description.
         
@@ -355,12 +400,27 @@ def generate_custom_resume(resume: str, job_description: str) -> Optional[str]:
         Job Description:
         {job_description}
         
+        Job Matches Analysis:
+        {json.dumps(job_matches, indent=2)}
+        
         Please:
         1. Tailor the content to match the job requirements
-        2. Highlight relevant skills and experience
-        3. Use industry-specific terminology
-        4. Maintain professional formatting
+        2. Highlight relevant skills and experience based on the match analysis
+        3. Use industry-specific terminology from the job description
+        4. Maintain professional formatting and structure
         5. Keep the optimized ATS-friendly content
+        6. Emphasize matching keywords naturally
+        7. Add quantifiable achievements where possible
+        8. Ensure all sections are properly organized
+        9. Use action verbs and strong language
+        10. Make the resume stand out while staying professional
+        
+        Format the output with clear sections:
+        - Professional Summary (tailored to the job)
+        - Work Experience (highlighting relevant achievements)
+        - Education
+        - Skills (prioritizing job-relevant skills)
+        - Additional Qualifications
         """
         
         # Generate completion
@@ -432,18 +492,35 @@ def analyze_green_job_opportunities(job_description: str) -> List[Dict[str, str]
         for category, keywords in GREEN_JOB_CATEGORIES.items():
             matching_keywords = [keyword for keyword in keywords if keyword in job_desc_lower]
             if matching_keywords:
+                # Calculate match percentage
+                match_percentage = len(matching_keywords) / len(keywords) * 100
+                
+                # Generate specific recommendations based on category
+                recommendation = f"This position has a {round(match_percentage, 2)}% match with {category.replace('_', ' ')} initiatives. "
+                if match_percentage > 70:
+                    recommendation += "This is a strong match for green job opportunities. "
+                elif match_percentage > 40:
+                    recommendation += "This position has significant green job potential. "
+                else:
+                    recommendation += "This position has some green job elements. "
+                
+                recommendation += "Consider highlighting relevant experience in this area."
+                
                 matches.append({
                     "category": category.replace("_", " ").title(),
+                    "match_percentage": round(match_percentage, 2),
                     "keywords": matching_keywords,
-                    "recommendation": f"This position aligns with {category.replace('_', ' ')} initiatives. Consider highlighting relevant experience in this area."
+                    "recommendation": recommendation
                 })
         
+        # Sort by match percentage
+        matches.sort(key=lambda x: x["match_percentage"], reverse=True)
         return matches
     except Exception as e:
         logger.error(f"Error analyzing green job opportunities: {str(e)}")
         return []
 
-def generate_blockchain_hash(content: str) -> str:
+def generate_blockchain_hash(content: str) -> Dict[str, str]:
     """
     Generate a blockchain hash for resume verification.
     
@@ -451,7 +528,7 @@ def generate_blockchain_hash(content: str) -> str:
         content (str): The resume content to hash
         
     Returns:
-        str: The generated hash
+        Dict[str, str]: Dictionary containing hash and verification details
     """
     try:
         # Create a hash of the content
@@ -462,16 +539,28 @@ def generate_blockchain_hash(content: str) -> str:
         verification_data = {
             "content_hash": content_hash,
             "timestamp": timestamp,
-            "version": "1.0"
+            "version": "1.0",
+            "verification_type": "resume",
+            "hash_algorithm": "SHA-256"
         }
         
         # Create a hash of the verification data
         verification_hash = hashlib.sha256(json.dumps(verification_data).encode()).hexdigest()
         
-        return verification_hash
+        return {
+            "verification_hash": verification_hash,
+            "timestamp": timestamp,
+            "content_hash": content_hash,
+            "verification_url": f"https://resume-verification.com/verify/{verification_hash}"
+        }
     except Exception as e:
         logger.error(f"Error generating blockchain hash: {str(e)}")
-        return ""
+        return {
+            "verification_hash": "",
+            "timestamp": "",
+            "content_hash": "",
+            "verification_url": ""
+        }
 
 @app.route('/')
 def index():
@@ -552,7 +641,7 @@ def generate_resume():
         green_opportunities = analyze_green_job_opportunities(job_description)
         
         # Generate blockchain hash for verification
-        verification_hash = generate_blockchain_hash(generated_resume)
+        verification_data = generate_blockchain_hash(generated_resume)
         
         # Save the generated resume in both formats
         pdf_path, docx_path = save_output(generated_resume, template)
@@ -567,7 +656,7 @@ def generate_resume():
             'pdf_path': pdf_path,
             'docx_path': docx_path,
             'green_opportunities': green_opportunities,
-            'verification_hash': verification_hash,
+            'verification_data': verification_data,
             'job_matches': job_matches,
             'resume_keywords': resume_keywords
         })
@@ -595,6 +684,110 @@ def download_file(filename):
         logger.error(f"Error downloading file: {str(e)}")
         logger.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({'error': f'Error downloading file: {str(e)}'}), 500
+
+@app.route('/suggest', methods=['POST'])
+def get_suggestions():
+    """Handle real-time AI suggestions request."""
+    try:
+        data = request.get_json()
+        if not data or 'text' not in data:
+            return jsonify({'error': 'No text provided'}), 400
+            
+        text = data['text']
+        section = data.get('section', 'general')  # e.g., 'experience', 'education', 'skills'
+        
+        # Initialize Groq client
+        client = Groq(
+            api_key=os.environ.get('GROQ_API_KEY'),
+            base_url="https://api.groq.com"
+        )
+        
+        # Prepare the suggestion prompt based on section
+        section_prompts = {
+            'experience': """
+            Analyze this work experience section and provide suggestions for improvement:
+            1. Use stronger action verbs
+            2. Add quantifiable achievements
+            3. Highlight relevant skills
+            4. Improve clarity and impact
+            5. Make it more ATS-friendly
+            
+            Current text:
+            {text}
+            
+            Provide 3-5 specific suggestions for improvement.
+            """,
+            'education': """
+            Analyze this education section and provide suggestions for improvement:
+            1. Highlight relevant coursework
+            2. Add academic achievements
+            3. Include relevant certifications
+            4. Make it more impactful
+            5. Ensure proper formatting
+            
+            Current text:
+            {text}
+            
+            Provide 3-5 specific suggestions for improvement.
+            """,
+            'skills': """
+            Analyze this skills section and provide suggestions for improvement:
+            1. Add relevant technical skills
+            2. Include soft skills
+            3. Prioritize most important skills
+            4. Make it more specific
+            5. Ensure ATS compatibility
+            
+            Current text:
+            {text}
+            
+            Provide 3-5 specific suggestions for improvement.
+            """,
+            'general': """
+            Analyze this resume section and provide suggestions for improvement:
+            1. Improve clarity and impact
+            2. Make it more professional
+            3. Enhance readability
+            4. Add relevant details
+            5. Make it more ATS-friendly
+            
+            Current text:
+            {text}
+            
+            Provide 3-5 specific suggestions for improvement.
+            """
+        }
+        
+        prompt = section_prompts.get(section, section_prompts['general']).format(text=text)
+        
+        # Generate suggestions
+        completion = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[
+                {"role": "user", "content": prompt},
+                {"role": "assistant", "content": "I'll help improve your resume section with specific suggestions."}
+            ],
+            temperature=0.7,
+            max_tokens=500,  # Shorter response for real-time suggestions
+            top_p=1,
+            stream=False
+        )
+        
+        suggestions = completion.choices[0].message.content
+        
+        # Extract keywords for ATS optimization
+        keywords = extract_keywords(text)
+        
+        return jsonify({
+            'success': True,
+            'suggestions': suggestions,
+            'keywords': keywords
+        })
+        
+    except Exception as e:
+        logger.error(f"Error generating suggestions: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return jsonify({'error': f'Error generating suggestions: {str(e)}'}), 500
 
 if __name__ == "__main__":
     # Setup environment

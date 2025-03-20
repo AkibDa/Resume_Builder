@@ -35,18 +35,27 @@
                 </div>
 
                 <!-- Job Description -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Job Description
-                    </label>
+                <div class="mb-6">
+                    <label for="job_description" class="block text-sm font-medium text-gray-700 mb-2">Job Description</label>
+                    <textarea id="job_description" name="job_description" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Paste the job description here..."></textarea>
+                    <div id="job_suggestions" class="mt-2 text-sm text-gray-600"></div>
+                </div>
+
+                <!-- Resume Textarea -->
+                <div class="mb-6">
+                    <label for="resume" class="block text-sm font-medium text-gray-700 mb-2">Your Resume</label>
                     <div class="relative">
-                        <textarea id="jobDescription" name="job_description" rows="4" 
-                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                            placeholder="Paste the job description here..."></textarea>
-                        <div id="suggestionBox" class="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg hidden">
-                            <!-- Suggestions will be populated here -->
+                        <textarea id="resume" name="resume" rows="10" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Paste your resume here..."></textarea>
+                        <div class="absolute right-2 top-2">
+                            <select id="resume_section" class="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white">
+                                <option value="general">General</option>
+                                <option value="experience">Experience</option>
+                                <option value="education">Education</option>
+                                <option value="skills">Skills</option>
+                            </select>
                         </div>
                     </div>
+                    <div id="resume_suggestions" class="mt-2 text-sm text-gray-600"></div>
                 </div>
 
                 <!-- Template Selection -->
@@ -97,6 +106,14 @@
 
             <!-- Error Alert -->
             <div id="errorAlert" class="hidden mt-4 p-4 bg-red-100 text-red-700 rounded-md"></div>
+
+            <!-- Suggestions Panel -->
+            <div id="suggestions_panel" class="hidden mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">AI Suggestions</h3>
+                <div id="suggestions_content" class="space-y-2">
+                    <!-- Suggestions will be inserted here -->
+                </div>
+            </div>
         </div>
 
         <!-- Preview Section -->
@@ -194,108 +211,103 @@
 
 {% block scripts %}
 <script>
+    // Get DOM elements
+    const resumeFile = document.getElementById('resume');
+    const jobDescriptionInput = document.getElementById('job_description');
+    const suggestionBox = document.getElementById('job_suggestions');
+    const selectedTemplate = document.getElementById('selectedTemplate');
+    const errorAlert = document.getElementById('errorAlert');
+    const resultSection = document.getElementById('resultSection');
+    const previewContent = document.getElementById('previewContent');
+    const resumeTextarea = document.getElementById('resume');
+    const resumeSection = document.getElementById('resume_section');
+    
     // Template selection
     document.querySelectorAll('.template-card').forEach(card => {
         card.addEventListener('click', () => {
             document.querySelectorAll('.template-card').forEach(c => c.classList.remove('border-indigo-500', 'bg-indigo-50'));
             card.classList.add('border-indigo-500', 'bg-indigo-50');
-            document.getElementById('selectedTemplate').value = card.dataset.template;
+            selectedTemplate.value = card.dataset.template;
         });
     });
-
+    
     // Job description suggestions
-    const suggestions = [
-        "Experienced software developer with strong problem-solving skills",
-        "Detail-oriented project manager with excellent communication abilities",
-        "Creative designer with expertise in UI/UX",
-        "Data analyst with experience in statistical analysis",
-        "Marketing professional with proven track record",
-        "Sales representative with strong negotiation skills",
-        "Customer service specialist with focus on client satisfaction",
-        "Financial analyst with expertise in risk management",
-        "HR professional with experience in talent acquisition",
+    const jobSuggestions = [
+        "Software engineer with full-stack development experience",
+        "Data analyst with machine learning expertise",
+        "Marketing manager with digital marketing skills",
+        "Financial analyst with risk management experience",
+        "Healthcare administrator with patient care background",
+        "Sales representative with client relationship skills",
+        "HR manager with talent acquisition experience",
         "Operations manager with process optimization skills"
     ];
-
-    const jobDescription = document.getElementById('jobDescription');
-    const suggestionBox = document.getElementById('suggestionBox');
-
-    jobDescription.addEventListener('input', (e) => {
+    
+    jobDescriptionInput.addEventListener('input', (e) => {
         const value = e.target.value.toLowerCase();
         if (value.length < 3) {
             suggestionBox.classList.add('hidden');
             return;
         }
-
-        const filteredSuggestions = suggestions.filter(s => 
-            s.toLowerCase().includes(value)
+        
+        const matches = jobSuggestions.filter(suggestion => 
+            suggestion.toLowerCase().includes(value)
         );
-
-        if (filteredSuggestions.length > 0) {
-            suggestionBox.innerHTML = filteredSuggestions
-                .map(s => `<div class="suggestion-item p-2 hover:bg-gray-100 cursor-pointer">${s}</div>`)
-                .join('');
+        
+        if (matches.length > 0) {
+            suggestionBox.innerHTML = matches.map(suggestion => 
+                `<div class="suggestion-item p-2 hover:bg-gray-100 cursor-pointer">${suggestion}</div>`
+            ).join('');
             suggestionBox.classList.remove('hidden');
         } else {
             suggestionBox.classList.add('hidden');
         }
     });
-
+    
     suggestionBox.addEventListener('click', (e) => {
         if (e.target.classList.contains('suggestion-item')) {
-            jobDescription.value = e.target.textContent;
+            jobDescriptionInput.value = e.target.textContent;
             suggestionBox.classList.add('hidden');
         }
     });
-
+    
     // Form submission
     document.getElementById('resumeForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        errorAlert.classList.add('hidden');
         
-        const formData = new FormData();
-        const resumeFile = document.getElementById('resume').files[0];
-        const jobDescription = document.getElementById('jobDescription').value;
-        const template = document.getElementById('selectedTemplate').value;
-
-        if (!resumeFile) {
-            showError('Please upload a resume file');
-            return;
-        }
-
-        if (!jobDescription) {
-            showError('Please enter a job description');
-            return;
-        }
-
-        formData.append('resume', resumeFile);
-        formData.append('job_description', jobDescription);
-        formData.append('template', template);
-
-        // Show loading state
-        document.getElementById('loading').classList.remove('hidden');
-        document.getElementById('errorAlert').classList.add('hidden');
-        document.getElementById('resultArea').classList.add('hidden');
-        document.getElementById('greenOpportunities').classList.add('hidden');
-        document.getElementById('atsOptimization').classList.add('hidden');
-        document.getElementById('jobMatches').classList.add('hidden');
-
         try {
-            // Upload resume
+            const formData = new FormData();
+            const resumeFile = document.getElementById('resume').files[0];
+            const jobDescription = jobDescriptionInput.value;
+            const template = selectedTemplate.value;
+            
+            if (!resumeFile) {
+                throw new Error('Please upload a resume file');
+            }
+            
+            if (!jobDescription) {
+                throw new Error('Please enter a job description');
+            }
+            
+            formData.append('resume', resumeFile);
+            
+            // First upload the resume
             const uploadResponse = await fetch('/upload', {
                 method: 'POST',
                 body: formData
             });
+            
             const uploadData = await uploadResponse.json();
-
-            if (!uploadResponse.ok) {
+            if (!uploadData.success) {
                 throw new Error(uploadData.error || 'Failed to upload resume');
             }
-
-            // Generate resume
+            
+            // Then generate the resume
             const generateResponse = await fetch('/generate', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                     resume: uploadData.resume_text,
@@ -303,87 +315,108 @@
                     template: template
                 })
             });
+            
             const generateData = await generateResponse.json();
-
-            if (!generateResponse.ok) {
+            if (!generateData.success) {
                 throw new Error(generateData.error || 'Failed to generate resume');
             }
-
-            // Update preview and result area
-            document.getElementById('generatedResume').innerHTML = generateData.resume.replace(/\n/g, '<br>');
-            document.getElementById('previewArea').innerHTML = generateData.resume.replace(/\n/g, '<br>');
-            document.getElementById('downloadPdf').href = generateData.pdf_path;
-            document.getElementById('downloadDocx').href = generateData.docx_path;
-            document.getElementById('verificationHash').textContent = generateData.verification_hash;
-
-            // Display ATS optimization results
-            if (generateData.resume_keywords) {
-                const keywordsContainer = document.getElementById('resumeKeywords');
-                keywordsContainer.innerHTML = generateData.resume_keywords
-                    .map(keyword => `
-                        <span class="px-2 py-1 bg-indigo-100 text-indigo-800 text-xs rounded-full">
-                            ${keyword}
-                        </span>
-                    `).join('');
-                document.getElementById('atsOptimization').classList.remove('hidden');
-            }
-
-            // Display job matches
-            if (generateData.job_matches && generateData.job_matches.length > 0) {
-                const jobMatchesContent = document.getElementById('jobMatchesContent');
-                jobMatchesContent.innerHTML = generateData.job_matches
-                    .map(match => `
-                        <div class="p-4 bg-blue-50 rounded-lg">
-                            <div class="flex justify-between items-start mb-2">
-                                <h3 class="text-sm font-medium text-blue-800">${match.industry}</h3>
-                                <span class="text-sm font-medium text-blue-600">${match.match_percentage}% Match</span>
-                            </div>
-                            <p class="text-sm text-blue-700 mb-2">${match.recommendation}</p>
-                            <div class="flex flex-wrap gap-2">
-                                ${match.matching_keywords.map(keyword => `
-                                    <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                                        ${keyword}
-                                    </span>
-                                `).join('')}
-                            </div>
-                        </div>
-                    `).join('');
-                document.getElementById('jobMatches').classList.remove('hidden');
-            }
-
-            // Display green job opportunities
-            if (generateData.green_opportunities && generateData.green_opportunities.length > 0) {
-                const greenOpportunitiesContent = document.getElementById('greenOpportunitiesContent');
-                greenOpportunitiesContent.innerHTML = generateData.green_opportunities.map(opportunity => `
-                    <div class="p-4 bg-green-50 rounded-lg">
-                        <h3 class="text-sm font-medium text-green-800 mb-2">${opportunity.category}</h3>
-                        <p class="text-sm text-green-700 mb-2">${opportunity.recommendation}</p>
-                        <div class="flex flex-wrap gap-2">
-                            ${opportunity.keywords.map(keyword => `
-                                <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                                    ${keyword}
-                                </span>
-                            `).join('')}
-                        </div>
-                    </div>
-                `).join('');
-                document.getElementById('greenOpportunities').classList.remove('hidden');
-            }
-
-            document.getElementById('resultArea').classList.remove('hidden');
-
+            
+            // Update preview
+            previewContent.innerHTML = generateData.resume.replace(/\n/g, '<br>');
+            resultSection.classList.remove('hidden');
+            
+            // Scroll to result section
+            resultSection.scrollIntoView({ behavior: 'smooth' });
+            
         } catch (error) {
-            showError(error.message);
-        } finally {
-            document.getElementById('loading').classList.add('hidden');
+            errorAlert.textContent = error.message;
+            errorAlert.classList.remove('hidden');
         }
     });
-
-    function showError(message) {
-        const errorAlert = document.getElementById('errorAlert');
-        errorAlert.textContent = message;
-        errorAlert.classList.remove('hidden');
+    
+    // Debounce function to limit API calls
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
     }
+    
+    // Function to get AI suggestions
+    async function getSuggestions(text, section) {
+        try {
+            const response = await fetch('/suggest', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text, section })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                return data.suggestions;
+            }
+            return null;
+        } catch (error) {
+            console.error('Error getting suggestions:', error);
+            return null;
+        }
+    }
+    
+    // Function to update suggestions panel
+    function updateSuggestionsPanel(suggestions) {
+        const panel = document.getElementById('suggestions_panel');
+        const content = document.getElementById('suggestions_content');
+        
+        if (suggestions) {
+            panel.classList.remove('hidden');
+            content.innerHTML = suggestions.split('\n').map(suggestion => 
+                `<p class="text-gray-700">• ${suggestion}</p>`
+            ).join('');
+        } else {
+            panel.classList.add('hidden');
+        }
+    }
+    
+    // Debounced function for resume suggestions
+    const debouncedResumeSuggestions = debounce(async (text, section) => {
+        if (text.trim().length > 50) {  // Only get suggestions for substantial text
+            const suggestions = await getSuggestions(text, section);
+            updateSuggestionsPanel(suggestions);
+        } else {
+            updateSuggestionsPanel(null);
+        }
+    }, 1000);
+    
+    // Debounced function for job description suggestions
+    const debouncedJobSuggestions = debounce(async (text) => {
+        if (text.trim().length > 50) {  // Only get suggestions for substantial text
+            const suggestions = await getSuggestions(text, 'general');
+            document.getElementById('job_suggestions').innerHTML = suggestions ? 
+                suggestions.split('\n').map(s => `<p class="text-gray-700">• ${s}</p>`).join('') : '';
+        } else {
+            document.getElementById('job_suggestions').innerHTML = '';
+        }
+    }, 1000);
+    
+    // Add event listeners for real-time suggestions
+    resumeTextarea.addEventListener('input', () => {
+        debouncedResumeSuggestions(resumeTextarea.value, resumeSection.value);
+    });
+    
+    resumeSection.addEventListener('change', () => {
+        debouncedResumeSuggestions(resumeTextarea.value, resumeSection.value);
+    });
+    
+    jobDescriptionInput.addEventListener('input', () => {
+        debouncedJobSuggestions(jobDescriptionInput.value);
+    });
 
     function copyVerificationHash() {
         const hashElement = document.getElementById('verificationHash');
