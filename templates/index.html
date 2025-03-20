@@ -41,23 +41,6 @@
                     <div id="job_suggestions" class="mt-2 text-sm text-gray-600"></div>
                 </div>
 
-                <!-- Resume Textarea -->
-                <div class="mb-6">
-                    <label for="resume" class="block text-sm font-medium text-gray-700 mb-2">Your Resume</label>
-                    <div class="relative">
-                        <textarea id="resume" name="resume" rows="10" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Paste your resume here..."></textarea>
-                        <div class="absolute right-2 top-2">
-                            <select id="resume_section" class="text-sm border border-gray-300 rounded-md px-2 py-1 bg-white">
-                                <option value="general">General</option>
-                                <option value="experience">Experience</option>
-                                <option value="education">Education</option>
-                                <option value="skills">Skills</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div id="resume_suggestions" class="mt-2 text-sm text-gray-600"></div>
-                </div>
-
                 <!-- Template Selection -->
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -219,8 +202,6 @@
     const errorAlert = document.getElementById('errorAlert');
     const resultSection = document.getElementById('resultSection');
     const previewContent = document.getElementById('previewContent');
-    const resumeTextarea = document.getElementById('resume');
-    const resumeSection = document.getElementById('resume_section');
     
     // Template selection
     document.querySelectorAll('.template-card').forEach(card => {
@@ -321,12 +302,38 @@
                 throw new Error(generateData.error || 'Failed to generate resume');
             }
             
+            // Show loading state
+            document.getElementById('loading').classList.remove('hidden');
+            
             // Update preview
-            previewContent.innerHTML = generateData.resume.replace(/\n/g, '<br>');
-            resultSection.classList.remove('hidden');
+            const previewArea = document.getElementById('previewArea');
+            previewArea.innerHTML = generateData.resume.replace(/\n/g, '<br>');
+            
+            // Update result section
+            const resultArea = document.getElementById('resultArea');
+            const generatedResume = document.getElementById('generatedResume');
+            generatedResume.innerHTML = generateData.resume.replace(/\n/g, '<br>');
+            
+            // Update download links
+            const downloadPdf = document.getElementById('downloadPdf');
+            const downloadDocx = document.getElementById('downloadDocx');
+            downloadPdf.href = generateData.pdf_file;
+            downloadDocx.href = generateData.docx_file;
+            
+            // Update verification hash
+            document.getElementById('verificationHash').textContent = generateData.verification_hash;
+            
+            // Show result sections
+            resultArea.classList.remove('hidden');
+            document.getElementById('atsOptimization').classList.remove('hidden');
+            document.getElementById('jobMatches').classList.remove('hidden');
+            document.getElementById('greenOpportunities').classList.remove('hidden');
+            
+            // Hide loading state
+            document.getElementById('loading').classList.add('hidden');
             
             // Scroll to result section
-            resultSection.scrollIntoView({ behavior: 'smooth' });
+            resultArea.scrollIntoView({ behavior: 'smooth' });
             
         } catch (error) {
             errorAlert.textContent = error.message;
@@ -334,88 +341,12 @@
         }
     });
     
-    // Debounce function to limit API calls
-    function debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    }
-    
-    // Function to get AI suggestions
-    async function getSuggestions(text, section) {
-        try {
-            const response = await fetch('/suggest', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ text, section })
-            });
-            
-            const data = await response.json();
-            if (data.success) {
-                return data.suggestions;
-            }
-            return null;
-        } catch (error) {
-            console.error('Error getting suggestions:', error);
-            return null;
+    // File upload preview
+    document.getElementById('resume').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            document.getElementById('uploadStatus').textContent = `Selected file: ${file.name}`;
         }
-    }
-    
-    // Function to update suggestions panel
-    function updateSuggestionsPanel(suggestions) {
-        const panel = document.getElementById('suggestions_panel');
-        const content = document.getElementById('suggestions_content');
-        
-        if (suggestions) {
-            panel.classList.remove('hidden');
-            content.innerHTML = suggestions.split('\n').map(suggestion => 
-                `<p class="text-gray-700">• ${suggestion}</p>`
-            ).join('');
-        } else {
-            panel.classList.add('hidden');
-        }
-    }
-    
-    // Debounced function for resume suggestions
-    const debouncedResumeSuggestions = debounce(async (text, section) => {
-        if (text.trim().length > 50) {  // Only get suggestions for substantial text
-            const suggestions = await getSuggestions(text, section);
-            updateSuggestionsPanel(suggestions);
-        } else {
-            updateSuggestionsPanel(null);
-        }
-    }, 1000);
-    
-    // Debounced function for job description suggestions
-    const debouncedJobSuggestions = debounce(async (text) => {
-        if (text.trim().length > 50) {  // Only get suggestions for substantial text
-            const suggestions = await getSuggestions(text, 'general');
-            document.getElementById('job_suggestions').innerHTML = suggestions ? 
-                suggestions.split('\n').map(s => `<p class="text-gray-700">• ${s}</p>`).join('') : '';
-        } else {
-            document.getElementById('job_suggestions').innerHTML = '';
-        }
-    }, 1000);
-    
-    // Add event listeners for real-time suggestions
-    resumeTextarea.addEventListener('input', () => {
-        debouncedResumeSuggestions(resumeTextarea.value, resumeSection.value);
-    });
-    
-    resumeSection.addEventListener('change', () => {
-        debouncedResumeSuggestions(resumeTextarea.value, resumeSection.value);
-    });
-    
-    jobDescriptionInput.addEventListener('input', () => {
-        debouncedJobSuggestions(jobDescriptionInput.value);
     });
 
     function copyVerificationHash() {
@@ -428,13 +359,5 @@
             }, 2000);
         });
     }
-
-    // File upload preview
-    document.getElementById('resume').addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            document.getElementById('uploadStatus').textContent = `Selected file: ${file.name}`;
-        }
-    });
 </script>
 {% endblock %} 
