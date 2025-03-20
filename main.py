@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Resume Builder Web Application using Groq API
 This web application allows users to input their resume and job description
@@ -21,23 +20,23 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from docx import Document
+from docx.shared import Inches, Pt
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from werkzeug.utils import secure_filename
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
-# Initialize Flask app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')
 app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 ALLOWED_EXTENSIONS = {'pdf'}
 
-# Constants
 MODEL_NAME = "llama-3.3-70b-versatile"
 OUTPUT_DIR = "output"
 MAX_TOKENS = 1024
@@ -49,7 +48,6 @@ def setup_environment() -> None:
         if not os.getenv('GROQ_API_KEY'):
             raise ValueError("GROQ_API_KEY environment variable is not set")
         
-        # Create necessary directories
         Path(OUTPUT_DIR).mkdir(exist_ok=True)
         Path(app.config['UPLOAD_FOLDER']).mkdir(exist_ok=True)
         logger.info("Environment setup completed successfully")
@@ -83,38 +81,86 @@ def extract_text_from_pdf(pdf_path: str) -> str:
         logger.error(f"Traceback: {traceback.format_exc()}")
         raise
 
-def create_pdf_from_text(text: str, output_path: str) -> None:
+def create_pdf_from_text(text: str, output_path: str, template: str = 'modern') -> None:
     """
     Create a PDF file from text content.
     
     Args:
         text (str): Text content to write to PDF
         output_path (str): Path where to save the PDF
+        template (str): Template style to use
     """
     try:
         c = canvas.Canvas(output_path, pagesize=letter)
         width, height = letter
         
-        # Set font and size
-        c.setFont("Helvetica", 12)
+        if template == 'modern':
+            title_font_size = 24
+            heading_font_size = 16
+            body_font_size = 12
+        elif template == 'classic':
+            title_font_size = 20
+            heading_font_size = 14
+            body_font_size = 12
+        else:  
+            title_font_size = 28
+            heading_font_size = 18
+            body_font_size = 12
         
-        # Split text into lines and write to PDF
+        c.setFont("Helvetica-Bold", title_font_size)
+        title = "Professional Resume"
+        c.drawString(width/2 - c.stringWidth(title, "Helvetica-Bold", title_font_size)/2, height - 50, title)
+        
+        c.setFont("Helvetica", body_font_size)
+        
         lines = text.split('\n')
-        y = height - 50  # Start 50 points from top
+        y = height - 100  
         
         for line in lines:
-            if y < 50:  # If we're near the bottom, start a new page
+            if y < 50: 
                 c.showPage()
-                c.setFont("Helvetica", 12)
+                c.setFont("Helvetica", body_font_size)
                 y = height - 50
             
             c.drawString(50, y, line)
-            y -= 15  # Move down 15 points for next line
+            y -= 15  
         
         c.save()
         logger.info(f"Successfully created PDF at: {output_path}")
     except Exception as e:
         logger.error(f"Error creating PDF: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise
+
+def create_docx_from_text(text: str, output_path: str, template: str = 'modern') -> None:
+    """
+    Create a DOCX file from text content.
+    
+    Args:
+        text (str): Text content to write to DOCX
+        output_path (str): Path where to save the DOCX
+        template (str): Template style to use
+    """
+    try:
+        doc = Document()
+        
+        title = doc.add_heading('Professional Resume', 0)
+        title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        
+        for line in text.split('\n'):
+            if line.strip():
+                p = doc.add_paragraph(line)
+                if template == 'modern':
+                    p.style = 'Normal'
+                elif template == 'classic':
+                    p.style = 'Body Text'
+                else:  
+                    p.style = 'Normal'
+        
+        doc.save(output_path)
+        logger.info(f"Successfully created DOCX at: {output_path}")
+    except Exception as e:
+        logger.error(f"Error creating DOCX: {str(e)}")
         logger.error(f"Traceback: {traceback.format_exc()}")
         raise
 
@@ -130,13 +176,10 @@ def generate_custom_resume(resume: str, job_description: str) -> Optional[str]:
         Optional[str]: The generated resume or None if there's an error
     """
     try:
-        # Initialize Groq client
         client = Groq(api_key=os.environ.get('GROQ_API_KEY'))
         
-        # Prepare the prompt
         prompt = f"Build a custom resume for this job posting here is the resume: {resume} and here is the job description: {job_description}"
         
-        # Generate completion
         completion = client.chat.completions.create(
             model=MODEL_NAME,
             messages=[
@@ -159,33 +202,32 @@ def generate_custom_resume(resume: str, job_description: str) -> Optional[str]:
         logger.error(f"Traceback: {traceback.format_exc()}")
         return None
 
-def save_output(content: str, is_pdf: bool = False) -> Optional[str]:
+def save_output(content: str, template: str = 'modern') -> Tuple[Optional[str], Optional[str]]:
     """
-    Save the generated content to a file with timestamp.
+    Save the generated content to files with timestamp.
     
     Args:
         content (str): Content to save
-        is_pdf (bool): Whether to save as PDF
+        template (str): Template style to use
         
     Returns:
-        Optional[str]: Path to the saved file or None if there's an error
+        Tuple[Optional[str], Optional[str]]: Paths to the saved PDF and DOCX files
     """
     try:
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-        if is_pdf:
-            output_file = Path(OUTPUT_DIR) / f"resume-{timestamp}.pdf"
-            create_pdf_from_text(content, str(output_file))
-        else:
-            output_file = Path(OUTPUT_DIR) / f"resume-{timestamp}.txt"
-            with open(output_file, "w", encoding='utf-8') as output:
-                output.write(content)
         
-        logger.info(f"Output saved to: {output_file}")
-        return str(output_file)
+        pdf_file = Path(OUTPUT_DIR) / f"resume-{timestamp}.pdf"
+        create_pdf_from_text(content, str(pdf_file), template)
+        
+        docx_file = Path(OUTPUT_DIR) / f"resume-{timestamp}.docx"
+        create_docx_from_text(content, str(docx_file), template)
+        
+        logger.info(f"Output saved to: {pdf_file} and {docx_file}")
+        return str(pdf_file), str(docx_file)
     except Exception as e:
-        logger.error(f"Error saving output file: {str(e)}")
+        logger.error(f"Error saving output files: {str(e)}")
         logger.error(f"Traceback: {traceback.format_exc()}")
-        return None
+        return None, None
 
 @app.route('/')
 def index():
@@ -210,10 +252,8 @@ def upload_resume():
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
             
-            # Extract text from PDF
             resume_text = extract_text_from_pdf(filepath)
             
-            # Clean up uploaded file
             os.remove(filepath)
             
             return jsonify({
@@ -233,7 +273,6 @@ def upload_resume():
 def generate_resume():
     """Handle resume generation request."""
     try:
-        # Get JSON data from request
         data = request.get_json()
         if not data:
             logger.error("No JSON data received")
@@ -245,27 +284,27 @@ def generate_resume():
         
         resume = data['resume']
         job_description = data['job_description']
+        template = data.get('template', 'modern')
         
         logger.info("Starting resume generation")
         
-        # Generate customized resume
         generated_resume = generate_custom_resume(resume, job_description)
         
         if not generated_resume:
             logger.error("Failed to generate resume content")
             return jsonify({'error': 'Failed to generate resume'}), 500
         
-        # Save the generated resume as PDF
-        output_file = save_output(generated_resume, is_pdf=True)
+        pdf_path, docx_path = save_output(generated_resume, template)
         
-        if not output_file:
-            logger.error("Failed to save output file")
+        if not pdf_path or not docx_path:
+            logger.error("Failed to save output files")
             return jsonify({'error': 'Failed to save resume'}), 500
         
         return jsonify({
             'success': True,
             'resume': generated_resume,
-            'pdf_path': output_file
+            'pdf_path': pdf_path,
+            'docx_path': docx_path
         })
         
     except Exception as e:
@@ -293,8 +332,6 @@ def download_file(filename):
         return jsonify({'error': f'Error downloading file: {str(e)}'}), 500
 
 if __name__ == "__main__":
-    # Setup environment
     setup_environment()
     
-    # Run the Flask app
     app.run(debug=True)
