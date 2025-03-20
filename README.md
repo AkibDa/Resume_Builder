@@ -1,88 +1,51 @@
 # Resume Builder
 
-A Python-based tool that helps users create professional resumes quickly and efficiently. This command-line application provides a straightforward way to generate well-formatted resumes without the need for complex design software.
+This repository contains a simple web-based resume builder application. It allows users to quickly create a basic resume by inputting their personal information, education, experience, and skills.
 
 ## Features
 
-- **Simple Command-line Interface**: Easy-to-use commands for resume creation
-- **Template-based Generation**: Pre-defined templates for professional resume layouts
-- **Section Customization**: Add personal information, education, experience, skills, and more
-- **Export to PDF**: Generate professional-looking PDF resumes
-- **Data Persistence**: Save your resume data for future updates
-- **Formatting Options**: Customize fonts, spacing, and section layouts
+* **Easy to Use:** Simple and intuitive user interface.
+* **Input Fields:** Dedicated input fields for personal details, education, experience, and skills.
+* **Dynamic Generation:** Generates a basic resume layout based on user input.
+* **Responsive design:** Some degree of responsiveness is included.
 
-## Installation
+## Technologies Used
 
-1. Clone the repository:
-   ```
-   git clone https://github.com/AkibDa/Resume_Builder.git
-   ```
+* HTML
+* CSS
+* JavaScript
+* Python
 
-2. Navigate to the project directory:
-   ```
-   cd Resume_Builder
-   ```
+## Getting Started
 
-3. Install requirements:
-   ```
-   pip install -r requirements.txt
-   ```
+1.  **Clone the repository:**
 
-## Usage
+    ```bash
+    git clone [https://github.com/AkibDa/Resume_Builder.git](https://www.google.com/search?q=https://github.com/AkibDa/Resume_Builder.git)
+    ```
 
-Run the main script:
-```
-python main.py
-```
+2.  **Open `index.html` in your web browser.**
 
-Follow the interactive prompts to:
-1. Enter your personal information
-2. Add education details
-3. Include work experience
-4. List skills and qualifications
-5. Select a template
-6. Generate your resume as a PDF file
+3.  **Fill in the input fields with your resume information.**
 
-## Dependencies
+4.  **View the generated resume.**
 
-- Python 3.6+
-- fpdf (for PDF generation)
-- PyYAML (for configuration)
-- Other dependencies listed in requirements.txt
+## Potential Future Enhancements
 
-## Example
-
-```
-$ python main.py
-Welcome to Resume Builder!
-Please enter your name: John Doe
-Please enter your email: john.doe@example.com
-...
-Your resume has been generated as 'John_Doe_Resume.pdf'
-```
+* **Improved Design:** Enhance the visual design and layout for a more professional look.
+* **Download/Print Functionality:** Implement functionality to download or print the generated resume.
+* **Template Options:** Add more resume templates or customization options.
+* **Input Validation:** Add better error handling and input validation.
+* **Code Improvements:** Add more comments to the javascript file.
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! If you have any ideas for improvements or find any bugs, please feel free to submit a pull request or open an issue.
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+## Author
+
+* Sk Akib Ahammed [ahammedskakib@gmail.com]
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Contact
-
-Akib Da - [@AkibDa](https://github.com/AkibDa)
-
-Project Link: [https://github.com/AkibDa/Resume_Builder](https://github.com/AkibDa/Resume_Builder)
-
-## Acknowledgments
-
-- Thanks to all contributors who have helped shape this project
-- Inspiration from other resume generation tools
-- Special thanks to the Python community for providing great libraries
+This project is open-source.
