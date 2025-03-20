@@ -14,6 +14,7 @@ This repository contains a simple web-based resume builder application. It allow
 * HTML
 * CSS
 * JavaScript
+* Python
 
 ## Getting Started
 
