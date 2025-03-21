@@ -780,6 +780,127 @@ def get_suggestions():
         logger.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/create', methods=['GET', 'POST'])
+def create_resume():
+    if request.method == 'GET':
+        return render_template('create.html')
+    
+    try:
+        data = request.get_json()
+        
+        # Extract personal information
+        personal_info = {
+            'first_name': data.get('firstName'),
+            'last_name': data.get('lastName'),
+            'email': data.get('email'),
+            'phone': data.get('phone'),
+            'location': data.get('location')
+        }
+        
+        # Extract professional summary
+        summary = data.get('summary')
+        
+        # Extract work experience
+        experience = []
+        for i in range(len(data.get('companies', []))):
+            experience.append({
+                'company': data['companies'][i],
+                'position': data['positions'][i],
+                'start_date': data['startDates'][i],
+                'end_date': data['endDates'][i],
+                'responsibilities': data['responsibilities'][i]
+            })
+        
+        # Extract education
+        education = []
+        for i in range(len(data.get('institutions', []))):
+            education.append({
+                'institution': data['institutions'][i],
+                'degree': data['degrees'][i],
+                'start_date': data['eduStartDates'][i],
+                'end_date': data['eduEndDates'][i]
+            })
+        
+        # Extract skills
+        skills = {
+            'technical': data.get('technicalSkills', []),
+            'soft': data.get('softSkills', [])
+        }
+        
+        # Get selected template
+        template = data.get('template', 'modern')
+        
+        # Generate resume content
+        resume_content = generate_resume_content(
+            personal_info=personal_info,
+            summary=summary,
+            experience=experience,
+            education=education,
+            skills=skills,
+            template=template
+        )
+        
+        # Create PDF and DOCX files
+        timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        pdf_path = f"output/resume-{timestamp}.pdf"
+        docx_path = f"output/resume-{timestamp}.docx"
+        
+        create_pdf_from_text(resume_content, pdf_path)
+        create_docx_from_text(resume_content, docx_path)
+        
+        return jsonify({
+            'success': True,
+            'resume': resume_content,
+            'pdf_path': pdf_path,
+            'docx_path': docx_path
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error creating resume: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+def generate_resume_content(personal_info, summary, experience, education, skills, template):
+    """Generate resume content based on the provided information and template."""
+    
+    # Format personal information
+    header = f"{personal_info['first_name']} {personal_info['last_name']}\n"
+    header += f"{personal_info['email']} | {personal_info['phone']} | {personal_info['location']}\n\n"
+    
+    # Format professional summary
+    content = header
+    content += "PROFESSIONAL SUMMARY\n"
+    content += "=" * 50 + "\n"
+    content += f"{summary}\n\n"
+    
+    # Format work experience only if not a fresher
+    if experience and any(exp['company'] for exp in experience):
+        content += "PROFESSIONAL EXPERIENCE\n"
+        content += "=" * 50 + "\n"
+        for exp in experience:
+            content += f"{exp['position']}\n"
+            content += f"{exp['company']} | {exp['start_date']} - {exp['end_date']}\n"
+            content += f"{exp['responsibilities']}\n\n"
+    
+    # Format education
+    content += "EDUCATION\n"
+    content += "=" * 50 + "\n"
+    for edu in education:
+        content += f"{edu['degree']}\n"
+        content += f"{edu['institution']} | {edu['start_date']} - {edu['end_date']}\n\n"
+    
+    # Format skills
+    content += "SKILLS\n"
+    content += "=" * 50 + "\n"
+    if skills['technical']:
+        content += "Technical Skills: " + ", ".join(skills['technical']) + "\n"
+    if skills['soft']:
+        content += "Soft Skills: " + ", ".join(skills['soft']) + "\n"
+    
+    return content
+
 if __name__ == "__main__":
     # Setup environment
     setup_environment()
