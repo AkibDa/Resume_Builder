@@ -102,7 +102,7 @@
         <!-- Preview Section -->
         <div class="bg-white rounded-lg shadow-lg p-6">
             <h2 class="text-lg font-medium text-gray-900 mb-4">Resume Preview</h2>
-            <div id="previewArea" class="resume-preview p-6">
+            <div id="previewArea" class="resume-preview p-6 bg-gray-50 rounded-lg border border-gray-200 min-h-[500px] font-sans">
                 <div class="text-center text-gray-500">
                     <i class="fas fa-file-alt text-4xl mb-2"></i>
                     <p>Your resume preview will appear here</p>
@@ -111,9 +111,10 @@
         </div>
     </div>
 
-    <!-- ATS Optimization Section -->
-    <div id="atsOptimization" class="hidden">
-        <div class="bg-white rounded-lg shadow-lg p-6">
+    <!-- Result Section -->
+    <div id="resultSection" class="hidden space-y-8">
+        <!-- ATS Optimization Results -->
+        <div id="atsOptimization" class="bg-white rounded-lg shadow-lg p-6">
             <h2 class="text-lg font-medium text-gray-900 mb-4">
                 <i class="fas fa-search text-indigo-500 mr-2"></i>ATS Optimization Results
             </h2>
@@ -124,11 +125,25 @@
                         <!-- Keywords will be populated here -->
                     </div>
                 </div>
-                <div class="p-4 bg-green-50 rounded-lg">
-                    <h3 class="text-sm font-medium text-green-800 mb-2">Grammar & Phrasing Improvements</h3>
-                    <p class="text-sm text-green-700">Your resume has been optimized for clarity and impact.</p>
-                </div>
             </div>
+        </div>
+
+        <!-- Generated Resume -->
+        <div id="generatedResume" class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">Generated Resume</h2>
+            <div id="resumeContent" class="prose max-w-none">
+                <!-- Resume content will be populated here -->
+            </div>
+        </div>
+
+        <!-- Download Options -->
+        <div class="flex justify-center space-x-4">
+            <a id="downloadPdf" href="#" class="inline-flex items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition-colors">
+                <i class="fas fa-file-pdf mr-2"></i> Download PDF
+            </a>
+            <a id="downloadDocx" href="#" class="inline-flex items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition-colors">
+                <i class="fas fa-file-word mr-2"></i> Download DOCX
+            </a>
         </div>
     </div>
 
@@ -155,63 +170,44 @@
             </div>
         </div>
     </div>
-
-    <!-- Result Section -->
-    <div id="resultArea" class="hidden">
-        <div class="bg-white rounded-lg shadow-lg p-6">
-            <h2 class="text-lg font-medium text-gray-900 mb-4">Your Enhanced Resume</h2>
-            <div class="space-y-4">
-                <div id="generatedResume" class="prose max-w-none"></div>
-                
-                <!-- Blockchain Verification -->
-                <div class="mt-6 p-4 bg-gray-50 rounded-lg">
-                    <h3 class="text-sm font-medium text-gray-900 mb-2">
-                        <i class="fas fa-shield-alt text-indigo-500 mr-2"></i>Blockchain Verification
-                    </h3>
-                    <p class="text-sm text-gray-600 mb-2">Your resume has been verified and stored on the blockchain.</p>
-                    <div class="flex items-center space-x-2">
-                        <span class="text-xs font-mono bg-gray-100 px-2 py-1 rounded" id="verificationHash"></span>
-                        <button onclick="copyVerificationHash()" class="text-gray-400 hover:text-gray-600">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Download Options -->
-                <div class="flex justify-center space-x-4">
-                    <a id="downloadPdf" href="#" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
-                        <i class="fas fa-file-pdf mr-2"></i> Download PDF
-                    </a>
-                    <a id="downloadDocx" href="#" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700">
-                        <i class="fas fa-file-word mr-2"></i> Download DOCX
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
     // Get DOM elements
-    const resumeFile = document.getElementById('resume');
+    const resumeForm = document.getElementById('resumeForm');
+    const resumeFileInput = document.getElementById('resume');
     const jobDescriptionInput = document.getElementById('job_description');
     const suggestionBox = document.getElementById('job_suggestions');
     const selectedTemplate = document.getElementById('selectedTemplate');
     const errorAlert = document.getElementById('errorAlert');
     const resultSection = document.getElementById('resultSection');
-    const previewContent = document.getElementById('previewContent');
-    
+    const resumeContent = document.getElementById('resumeContent');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const loadingIndicator = document.getElementById('loading');
+
+    // Initialize error alert if it doesn't exist
+    if (!errorAlert) {
+        const errorDiv = document.createElement('div');
+        errorDiv.id = 'errorAlert';
+        errorDiv.className = 'hidden mt-4 p-4 bg-red-100 text-red-700 rounded-md';
+        resumeForm.appendChild(errorDiv);
+    }
+
     // Template selection
     document.querySelectorAll('.template-card').forEach(card => {
         card.addEventListener('click', () => {
-            document.querySelectorAll('.template-card').forEach(c => c.classList.remove('border-indigo-500', 'bg-indigo-50'));
+            document.querySelectorAll('.template-card').forEach(c => {
+                c.classList.remove('border-indigo-500', 'bg-indigo-50');
+            });
             card.classList.add('border-indigo-500', 'bg-indigo-50');
-            selectedTemplate.value = card.dataset.template;
+            if (selectedTemplate) {
+                selectedTemplate.value = card.dataset.template;
+            }
         });
     });
-    
+
     // Job description suggestions
     const jobSuggestions = [
         "Software engineer with full-stack development experience",
@@ -253,110 +249,93 @@
     });
     
     // Form submission
-    document.getElementById('resumeForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        errorAlert.classList.add('hidden');
-        
-        try {
-            const formData = new FormData();
-            const resumeFile = document.getElementById('resume').files[0];
-            const jobDescription = jobDescriptionInput.value;
-            const template = selectedTemplate.value;
-            
-            if (!resumeFile) {
-                throw new Error('Please upload a resume file');
-            }
-            
-            if (!jobDescription) {
-                throw new Error('Please enter a job description');
-            }
-            
-            formData.append('resume', resumeFile);
-            
-            // First upload the resume
-            const uploadResponse = await fetch('/upload', {
-                method: 'POST',
-                body: formData
-            });
-            
-            const uploadData = await uploadResponse.json();
-            if (!uploadData.success) {
-                throw new Error(uploadData.error || 'Failed to upload resume');
-            }
-            
-            // Then generate the resume
-            const generateResponse = await fetch('/generate', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    resume: uploadData.resume_text,
-                    job_description: jobDescription,
-                    template: template
-                })
-            });
-            
-            const generateData = await generateResponse.json();
-            if (!generateData.success) {
-                throw new Error(generateData.error || 'Failed to generate resume');
-            }
-            
-            // Show loading state
-            document.getElementById('loading').classList.remove('hidden');
-            
-            // Update preview
-            const previewArea = document.getElementById('previewArea');
-            previewArea.innerHTML = generateData.resume.replace(/\n/g, '<br>');
-            
-            // Update result section
-            const resultArea = document.getElementById('resultArea');
-            const generatedResume = document.getElementById('generatedResume');
-            generatedResume.innerHTML = generateData.resume.replace(/\n/g, '<br>');
-            
-            // Update download links
-            const downloadPdf = document.getElementById('downloadPdf');
-            const downloadDocx = document.getElementById('downloadDocx');
-            downloadPdf.href = generateData.pdf_file;
-            downloadDocx.href = generateData.docx_file;
-            
-            // Update verification hash
-            document.getElementById('verificationHash').textContent = generateData.verification_hash;
-            
-            // Show result sections
-            resultArea.classList.remove('hidden');
-            document.getElementById('atsOptimization').classList.remove('hidden');
-            document.getElementById('jobMatches').classList.remove('hidden');
-            document.getElementById('greenOpportunities').classList.remove('hidden');
-            
-            // Hide loading state
-            document.getElementById('loading').classList.add('hidden');
-            
-            // Scroll to result section
-            resultArea.scrollIntoView({ behavior: 'smooth' });
-            
-        } catch (error) {
-            errorAlert.textContent = error.message;
-            errorAlert.classList.remove('hidden');
-        }
-    });
-    
-    // File upload preview
-    document.getElementById('resume').addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            document.getElementById('uploadStatus').textContent = `Selected file: ${file.name}`;
-        }
-    });
+    if (resumeForm) {
+        resumeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (errorAlert) errorAlert.classList.add('hidden');
+            if (loadingIndicator) loadingIndicator.classList.remove('hidden');
 
-    function copyVerificationHash() {
-        const hashElement = document.getElementById('verificationHash');
-        navigator.clipboard.writeText(hashElement.textContent).then(() => {
-            const button = hashElement.nextElementSibling;
-            button.innerHTML = '<i class="fas fa-check"></i>';
-            setTimeout(() => {
-                button.innerHTML = '<i class="fas fa-copy"></i>';
-            }, 2000);
+            try {
+                const formData = new FormData();
+                const resumeFile = resumeFileInput.files[0];
+                const jobDescription = jobDescriptionInput.value;
+                const template = selectedTemplate ? selectedTemplate.value : 'modern';
+
+                if (!resumeFile) {
+                    throw new Error('Please upload a resume file');
+                }
+
+                if (!jobDescription) {
+                    throw new Error('Please enter a job description');
+                }
+
+                formData.append('resume', resumeFile);
+
+                // First upload the resume
+                const uploadResponse = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const uploadData = await uploadResponse.json();
+                if (!uploadData.success) {
+                    throw new Error(uploadData.error || 'Failed to upload resume');
+                }
+
+                // Then generate the resume
+                const generateResponse = await fetch('/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        resume: uploadData.resume_text,
+                        job_description: jobDescription,
+                        template: template
+                    })
+                });
+
+                const generateData = await generateResponse.json();
+                if (!generateData.success) {
+                    throw new Error(generateData.error || 'Failed to generate resume');
+                }
+
+                // Update the resume content
+                if (resumeContent) {
+                    resumeContent.innerHTML = generateData.resume.replace(/\n/g, '<br>');
+                }
+
+                // Update download links
+                const downloadPdf = document.getElementById('downloadPdf');
+                const downloadDocx = document.getElementById('downloadDocx');
+                if (downloadPdf) downloadPdf.href = generateData.pdf_path;
+                if (downloadDocx) downloadDocx.href = generateData.docx_path;
+
+                // Show results
+                if (resultSection) {
+                    resultSection.classList.remove('hidden');
+                    resultSection.scrollIntoView({ behavior: 'smooth' });
+                }
+
+            } catch (error) {
+                if (errorAlert) {
+                    errorAlert.textContent = error.message;
+                    errorAlert.classList.remove('hidden');
+                }
+                console.error('Error:', error);
+            } finally {
+                if (loadingIndicator) loadingIndicator.classList.add('hidden');
+            }
+        });
+    }
+
+    // File upload preview
+    if (resumeFileInput) {
+        resumeFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && uploadStatus) {
+                uploadStatus.textContent = `Selected file: ${file.name}`;
+            }
         });
     }
 </script>

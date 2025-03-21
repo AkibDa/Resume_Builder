@@ -307,11 +307,8 @@ def optimize_for_ats(resume: str, job_description: str) -> str:
         str: Optimized resume text
     """
     try:
-        # Initialize Groq client with minimal configuration
-        client = Groq(
-            api_key=os.environ.get('GROQ_API_KEY'),
-            base_url="https://api.groq.com"
-        )
+        # Initialize Groq client
+        client = Groq(api_key=os.environ.get('GROQ_API_KEY'))
         
         # Extract keywords from job description
         job_keywords = extract_keywords(job_description)
@@ -380,11 +377,8 @@ def generate_custom_resume(resume: str, job_description: str) -> Optional[str]:
         # First optimize the resume for ATS
         optimized_resume = optimize_for_ats(resume, job_description)
         
-        # Initialize Groq client with minimal configuration
-        client = Groq(
-            api_key=os.environ.get('GROQ_API_KEY'),
-            base_url="https://api.groq.com"
-        )
+        # Initialize Groq client
+        client = Groq(api_key=os.environ.get('GROQ_API_KEY'))
         
         # Extract keywords and analyze matches
         resume_keywords = extract_keywords(resume)
@@ -697,10 +691,7 @@ def get_suggestions():
         section = data.get('section', 'general')  # e.g., 'experience', 'education', 'skills'
         
         # Initialize Groq client
-        client = Groq(
-            api_key=os.environ.get('GROQ_API_KEY'),
-            base_url="https://api.groq.com"
-        )
+        client = Groq(api_key=os.environ.get('GROQ_API_KEY'))
         
         # Prepare the suggestion prompt based on section
         section_prompts = {
@@ -785,13 +776,13 @@ def get_suggestions():
         })
         
     except Exception as e:
-        logger.error(f"Error generating suggestions: {str(e)}")
+        logger.error(f"Error getting suggestions: {str(e)}")
         logger.error(f"Traceback: {traceback.format_exc()}")
-        return jsonify({'error': f'Error generating suggestions: {str(e)}'}), 500
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == "__main__":
     # Setup environment
     setup_environment()
     
     # Run the Flask app
-    app.run(debug=True, port=5001)
+    app.run(debug=True, port=5000)
