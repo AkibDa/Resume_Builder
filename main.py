@@ -28,26 +28,22 @@ from docx.shared import Inches, Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from werkzeug.utils import secure_filename
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
-# Initialize Flask app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')
 app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  
 ALLOWED_EXTENSIONS = {'pdf'}
 
-# Constants
 MODEL_NAME = "llama-3.3-70b-versatile"
 OUTPUT_DIR = "output"
 MAX_TOKENS = 1024
 
-# Green job categories and keywords
 GREEN_JOB_CATEGORIES = {
     "renewable_energy": ["solar", "wind", "hydro", "geothermal", "renewable", "clean energy", "solar panel", "wind turbine", "energy storage"],
     "sustainability": ["sustainable", "environmental", "eco-friendly", "green", "carbon footprint", "net zero", "sustainability", "environmental impact"],
@@ -59,7 +55,6 @@ GREEN_JOB_CATEGORIES = {
     "sustainable_agriculture": ["organic farming", "permaculture", "sustainable food", "local food", "food security", "regenerative agriculture", "vertical farming"]
 }
 
-# Common ATS keywords by industry
 ATS_KEYWORDS = {
     "software": ["python", "javascript", "java", "sql", "agile", "scrum", "git", "docker", "kubernetes", "aws", "azure"],
     "data": ["data analysis", "machine learning", "statistics", "sql", "python", "r", "tableau", "power bi", "excel"],
@@ -80,7 +75,6 @@ def setup_environment() -> None:
         if not os.getenv('GROQ_API_KEY'):
             raise ValueError("GROQ_API_KEY environment variable is not set")
         
-        # Create necessary directories
         Path(OUTPUT_DIR).mkdir(exist_ok=True)
         Path(app.config['UPLOAD_FOLDER']).mkdir(exist_ok=True)
         logger.info("Environment setup completed successfully")
@@ -127,7 +121,6 @@ def create_pdf_from_text(text: str, output_path: str, template: str = 'modern') 
         c = canvas.Canvas(output_path, pagesize=letter)
         width, height = letter
         
-        # Set font and size based on template
         if template == 'modern':
             title_font_size = 24
             heading_font_size = 16
@@ -136,31 +129,28 @@ def create_pdf_from_text(text: str, output_path: str, template: str = 'modern') 
             title_font_size = 20
             heading_font_size = 14
             body_font_size = 12
-        else:  # creative
+        else:  
             title_font_size = 28
             heading_font_size = 18
             body_font_size = 12
         
-        # Set title font
         c.setFont("Helvetica-Bold", title_font_size)
         title = "Professional Resume"
         c.drawString(width/2 - c.stringWidth(title, "Helvetica-Bold", title_font_size)/2, height - 50, title)
         
-        # Set body font
         c.setFont("Helvetica", body_font_size)
         
-        # Split text into lines and write to PDF
         lines = text.split('\n')
-        y = height - 100  # Start 100 points from top
+        y = height - 100 
         
         for line in lines:
-            if y < 50:  # If we're near the bottom, start a new page
+            if y < 50: 
                 c.showPage()
                 c.setFont("Helvetica", body_font_size)
                 y = height - 50
             
             c.drawString(50, y, line)
-            y -= 15  # Move down 15 points for next line
+            y -= 15 
         
         c.save()
         logger.info(f"Successfully created PDF at: {output_path}")
@@ -181,11 +171,9 @@ def create_docx_from_text(text: str, output_path: str, template: str = 'modern')
     try:
         doc = Document()
         
-        # Set title
         title = doc.add_heading('Professional Resume', 0)
         title.alignment = WD_ALIGN_PARAGRAPH.CENTER
         
-        # Add content
         for line in text.split('\n'):
             if line.strip():
                 p = doc.add_paragraph(line)
@@ -193,7 +181,7 @@ def create_docx_from_text(text: str, output_path: str, template: str = 'modern')
                     p.style = 'Normal'
                 elif template == 'classic':
                     p.style = 'Body Text'
-                else:  # creative
+                else:  
                     p.style = 'Normal'
         
         doc.save(output_path)
@@ -214,21 +202,18 @@ def extract_keywords(text: str) -> List[str]:
         List[str]: List of extracted keywords
     """
     try:
-        # Convert to lowercase and split into words
+        
         words = text.lower().split()
         
-        # Remove common words and punctuation
         common_words = {'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'i', 'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at'}
         words = [word.strip('.,!?()[]{}":;') for word in words if word not in common_words]
         
-        # Count word frequencies
         word_freq = {}
         for word in words:
             word_freq[word] = word_freq.get(word, 0) + 1
         
-        # Sort by frequency and return top keywords
         keywords = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)
-        return [word for word, _ in keywords[:20]]  # Return top 20 keywords
+        return [word for word, _ in keywords[:20]]  
     except Exception as e:
         logger.error(f"Error extracting keywords: {str(e)}")
         return []
@@ -249,18 +234,16 @@ def match_job_opportunities(resume_keywords: List[str], job_description: str) ->
         job_desc_lower = job_description.lower()
         resume_keywords_lower = [k.lower() for k in resume_keywords]
         
-        # Check each industry's keywords
         for industry, keywords in ATS_KEYWORDS.items():
             matching_keywords = [keyword for keyword in keywords if keyword in job_desc_lower]
             resume_matches = [keyword for keyword in keywords if keyword in resume_keywords_lower]
             
             if matching_keywords or resume_matches:
-                # Calculate match percentages
+                
                 job_match_percentage = len(matching_keywords) / len(keywords) * 100 if matching_keywords else 0
                 resume_match_percentage = len(resume_matches) / len(keywords) * 100 if resume_matches else 0
                 overall_match = (job_match_percentage + resume_match_percentage) / 2
                 
-                # Generate detailed recommendations
                 recommendation = f"This position has a {round(overall_match, 2)}% overall match with your experience in {industry.replace('_', ' ')}. "
                 
                 if job_match_percentage > 0:
@@ -288,7 +271,6 @@ def match_job_opportunities(resume_keywords: List[str], job_description: str) ->
                     "recommendation": recommendation
                 })
         
-        # Sort by overall match percentage
         matches.sort(key=lambda x: x["overall_match_percentage"], reverse=True)
         return matches
     except Exception as e:
@@ -307,13 +289,10 @@ def optimize_for_ats(resume: str, job_description: str) -> str:
         str: Optimized resume text
     """
     try:
-        # Initialize Groq client
         client = Groq(api_key=os.environ.get('GROQ_API_KEY'))
         
-        # Extract keywords from job description
         job_keywords = extract_keywords(job_description)
         
-        # Prepare the optimization prompt
         prompt = f"""
         Optimize this resume for ATS systems and improve grammar. The job description keywords are: {', '.join(job_keywords)}
         
@@ -340,7 +319,6 @@ def optimize_for_ats(resume: str, job_description: str) -> str:
         - Additional Qualifications
         """
         
-        # Generate optimized content
         completion = client.chat.completions.create(
             model=MODEL_NAME,
             messages=[
@@ -374,17 +352,13 @@ def generate_custom_resume(resume: str, job_description: str) -> Optional[str]:
         Optional[str]: The generated resume or None if there's an error
     """
     try:
-        # First optimize the resume for ATS
         optimized_resume = optimize_for_ats(resume, job_description)
         
-        # Initialize Groq client
         client = Groq(api_key=os.environ.get('GROQ_API_KEY'))
         
-        # Extract keywords and analyze matches
         resume_keywords = extract_keywords(resume)
         job_matches = match_job_opportunities(resume_keywords, job_description)
         
-        # Prepare the prompt with detailed matching information
         prompt = f"""
         Create a customized resume based on this optimized version and job description.
         
@@ -417,7 +391,6 @@ def generate_custom_resume(resume: str, job_description: str) -> Optional[str]:
         - Additional Qualifications
         """
         
-        # Generate completion
         completion = client.chat.completions.create(
             model=MODEL_NAME,
             messages=[
@@ -453,11 +426,9 @@ def save_output(content: str, template: str = 'modern') -> Tuple[Optional[str], 
     try:
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
         
-        # Save PDF
         pdf_file = Path(OUTPUT_DIR) / f"resume-{timestamp}.pdf"
         create_pdf_from_text(content, str(pdf_file), template)
         
-        # Save DOCX
         docx_file = Path(OUTPUT_DIR) / f"resume-{timestamp}.docx"
         create_docx_from_text(content, str(docx_file), template)
         
@@ -486,10 +457,8 @@ def analyze_green_job_opportunities(job_description: str) -> List[Dict[str, str]
         for category, keywords in GREEN_JOB_CATEGORIES.items():
             matching_keywords = [keyword for keyword in keywords if keyword in job_desc_lower]
             if matching_keywords:
-                # Calculate match percentage
                 match_percentage = len(matching_keywords) / len(keywords) * 100
                 
-                # Generate specific recommendations based on category
                 recommendation = f"This position has a {round(match_percentage, 2)}% match with {category.replace('_', ' ')} initiatives. "
                 if match_percentage > 70:
                     recommendation += "This is a strong match for green job opportunities. "
@@ -525,10 +494,8 @@ def generate_blockchain_hash(content: str) -> Dict[str, str]:
         Dict[str, str]: Dictionary containing hash and verification details
     """
     try:
-        # Create a hash of the content
         content_hash = hashlib.sha256(content.encode()).hexdigest()
         
-        # Add timestamp and version
         timestamp = datetime.datetime.now().isoformat()
         verification_data = {
             "content_hash": content_hash,
@@ -538,7 +505,6 @@ def generate_blockchain_hash(content: str) -> Dict[str, str]:
             "hash_algorithm": "SHA-256"
         }
         
-        # Create a hash of the verification data
         verification_hash = hashlib.sha256(json.dumps(verification_data).encode()).hexdigest()
         
         return {
@@ -579,10 +545,8 @@ def upload_resume():
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
             
-            # Extract text from PDF
             resume_text = extract_text_from_pdf(filepath)
             
-            # Clean up uploaded file
             os.remove(filepath)
             
             return jsonify({
@@ -602,7 +566,6 @@ def upload_resume():
 def generate_resume():
     """Handle resume generation request."""
     try:
-        # Get JSON data from request
         data = request.get_json()
         if not data:
             logger.error("No JSON data received")
@@ -618,26 +581,20 @@ def generate_resume():
         
         logger.info("Starting resume generation")
         
-        # Extract keywords from resume
         resume_keywords = extract_keywords(resume)
         
-        # Match job opportunities
         job_matches = match_job_opportunities(resume_keywords, job_description)
         
-        # Generate customized resume
         generated_resume = generate_custom_resume(resume, job_description)
         
         if not generated_resume:
             logger.error("Failed to generate resume content")
             return jsonify({'error': 'Failed to generate resume'}), 500
         
-        # Analyze green job opportunities
         green_opportunities = analyze_green_job_opportunities(job_description)
         
-        # Generate blockchain hash for verification
         verification_data = generate_blockchain_hash(generated_resume)
         
-        # Save the generated resume in both formats
         pdf_path, docx_path = save_output(generated_resume, template)
         
         if not pdf_path or not docx_path:
@@ -688,12 +645,10 @@ def get_suggestions():
             return jsonify({'error': 'No text provided'}), 400
             
         text = data['text']
-        section = data.get('section', 'general')  # e.g., 'experience', 'education', 'skills'
+        section = data.get('section', 'general')  
         
-        # Initialize Groq client
         client = Groq(api_key=os.environ.get('GROQ_API_KEY'))
         
-        # Prepare the suggestion prompt based on section
         section_prompts = {
             'experience': """
             Analyze this work experience section and provide suggestions for improvement:
@@ -751,7 +706,6 @@ def get_suggestions():
         
         prompt = section_prompts.get(section, section_prompts['general']).format(text=text)
         
-        # Generate suggestions
         completion = client.chat.completions.create(
             model=MODEL_NAME,
             messages=[
@@ -759,14 +713,13 @@ def get_suggestions():
                 {"role": "assistant", "content": "I'll help improve your resume section with specific suggestions."}
             ],
             temperature=0.7,
-            max_tokens=500,  # Shorter response for real-time suggestions
+            max_tokens=500,  
             top_p=1,
             stream=False
         )
         
         suggestions = completion.choices[0].message.content
         
-        # Extract keywords for ATS optimization
         keywords = extract_keywords(text)
         
         return jsonify({
@@ -787,50 +740,64 @@ def create_resume():
     
     try:
         data = request.get_json()
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No data received'
+            }), 400
         
-        # Extract personal information
+        app.logger.info(f"Received data: {data}")
+        
         personal_info = {
-            'first_name': data.get('firstName'),
-            'last_name': data.get('lastName'),
-            'email': data.get('email'),
-            'phone': data.get('phone'),
-            'location': data.get('location')
+            'first_name': data.get('firstName', ''),
+            'last_name': data.get('lastName', ''),
+            'email': data.get('email', ''),
+            'phone': data.get('phone', ''),
+            'location': data.get('location', '')
         }
         
-        # Extract professional summary
-        summary = data.get('summary')
+        summary = data.get('summary', '')
         
-        # Extract work experience
         experience = []
-        for i in range(len(data.get('companies', []))):
-            experience.append({
-                'company': data['companies'][i],
-                'position': data['positions'][i],
-                'start_date': data['startDates'][i],
-                'end_date': data['endDates'][i],
-                'responsibilities': data['responsibilities'][i]
-            })
+        if not data.get('isFresher', False):
+            companies = data.get('companies', [])
+            positions = data.get('positions', [])
+            startDates = data.get('startDates', [])
+            endDates = data.get('endDates', [])
+            responsibilities = data.get('responsibilities', [])
+            
+            for i in range(len(companies)):
+                if companies[i] and positions[i] and startDates[i] and endDates[i] and responsibilities[i]:
+                    experience.append({
+                        'company': companies[i],
+                        'position': positions[i],
+                        'start_date': startDates[i],
+                        'end_date': endDates[i],
+                        'responsibilities': responsibilities[i]
+                    })
         
-        # Extract education
         education = []
-        for i in range(len(data.get('institutions', []))):
-            education.append({
-                'institution': data['institutions'][i],
-                'degree': data['degrees'][i],
-                'start_date': data['eduStartDates'][i],
-                'end_date': data['eduEndDates'][i]
-            })
+        institutions = data.get('institutions', [])
+        degrees = data.get('degrees', [])
+        eduStartDates = data.get('eduStartDates', [])
+        eduEndDates = data.get('eduEndDates', [])
         
-        # Extract skills
+        for i in range(len(institutions)):
+            if institutions[i] and degrees[i] and eduStartDates[i] and eduEndDates[i]:
+                education.append({
+                    'institution': institutions[i],
+                    'degree': degrees[i],
+                    'start_date': eduStartDates[i],
+                    'end_date': eduEndDates[i]
+                })
+        
         skills = {
             'technical': data.get('technicalSkills', []),
             'soft': data.get('softSkills', [])
         }
         
-        # Get selected template
         template = data.get('template', 'modern')
         
-        # Generate resume content
         resume_content = generate_resume_content(
             personal_info=personal_info,
             summary=summary,
@@ -840,13 +807,21 @@ def create_resume():
             template=template
         )
         
-        # Create PDF and DOCX files
-        timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        os.makedirs('output', exist_ok=True)
+        
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
         pdf_path = f"output/resume-{timestamp}.pdf"
         docx_path = f"output/resume-{timestamp}.docx"
         
-        create_pdf_from_text(resume_content, pdf_path)
-        create_docx_from_text(resume_content, docx_path)
+        try:
+            create_pdf_from_text(resume_content, pdf_path)
+            create_docx_from_text(resume_content, docx_path)
+        except Exception as e:
+            app.logger.error(f"Error generating files: {str(e)}")
+            return jsonify({
+                'success': False,
+                'error': f"Error generating files: {str(e)}"
+            }), 500
         
         return jsonify({
             'success': True,
@@ -862,48 +837,45 @@ def create_resume():
             'error': str(e)
         }), 500
 
-def generate_resume_content(personal_info, summary, experience, education, skills, template):
+def generate_resume_content(personal_info, summary, experience, education, skills, template='modern'):
     """Generate resume content based on the provided information and template."""
     
-    # Format personal information
-    header = f"{personal_info['first_name']} {personal_info['last_name']}\n"
-    header += f"{personal_info['email']} | {personal_info['phone']} | {personal_info['location']}\n\n"
+    header = f"{personal_info.get('first_name', '')} {personal_info.get('last_name', '')}\n"
+    header += f"{personal_info.get('email', '')} | {personal_info.get('phone', '')} | {personal_info.get('location', '')}\n\n"
     
-    # Format professional summary
     content = header
     content += "PROFESSIONAL SUMMARY\n"
     content += "=" * 50 + "\n"
-    content += f"{summary}\n\n"
+    content += f"{summary}\n\n" if summary else "\n"
     
-    # Format work experience only if not a fresher
-    if experience and any(exp['company'] for exp in experience):
+    if experience and any(exp.get('company') for exp in experience):
         content += "PROFESSIONAL EXPERIENCE\n"
         content += "=" * 50 + "\n"
         for exp in experience:
-            content += f"{exp['position']}\n"
-            content += f"{exp['company']} | {exp['start_date']} - {exp['end_date']}\n"
-            content += f"{exp['responsibilities']}\n\n"
+            if exp.get('company') and exp.get('position'):
+                content += f"{exp.get('position', '')}\n"
+                content += f"{exp.get('company', '')} | {exp.get('start_date', '')} - {exp.get('end_date', '')}\n"
+                content += f"{exp.get('responsibilities', '')}\n\n"
     
-    # Format education
-    content += "EDUCATION\n"
-    content += "=" * 50 + "\n"
-    for edu in education:
-        content += f"{edu['degree']}\n"
-        content += f"{edu['institution']} | {edu['start_date']} - {edu['end_date']}\n\n"
+    if education and any(edu.get('institution') for edu in education):
+        content += "EDUCATION\n"
+        content += "=" * 50 + "\n"
+        for edu in education:
+            if edu.get('institution') and edu.get('degree'):
+                content += f"{edu.get('degree', '')}\n"
+                content += f"{edu.get('institution', '')} | {edu.get('start_date', '')} - {edu.get('end_date', '')}\n\n"
     
-    # Format skills
-    content += "SKILLS\n"
-    content += "=" * 50 + "\n"
-    if skills['technical']:
-        content += "Technical Skills: " + ", ".join(skills['technical']) + "\n"
-    if skills['soft']:
-        content += "Soft Skills: " + ", ".join(skills['soft']) + "\n"
+    if skills.get('technical') or skills.get('soft'):
+        content += "SKILLS\n"
+        content += "=" * 50 + "\n"
+        if skills.get('technical'):
+            content += "Technical Skills: " + ", ".join(skills['technical']) + "\n"
+        if skills.get('soft'):
+            content += "Soft Skills: " + ", ".join(skills['soft']) + "\n"
     
     return content
 
 if __name__ == "__main__":
-    # Setup environment
     setup_environment()
     
-    # Run the Flask app
     app.run(debug=True, port=5000)

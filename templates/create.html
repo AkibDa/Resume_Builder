@@ -2,18 +2,14 @@
 
 {% block content %}
 <div class="space-y-8">
-    <!-- Header Section -->
     <div class="text-center">
         <h1 class="text-4xl font-bold text-gray-900 mb-4">Create Resume from Scratch</h1>
         <p class="text-lg text-gray-600">Fill in your details to create a professional resume</p>
     </div>
 
-    <!-- Main Form Section -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Input Form -->
         <div class="bg-white rounded-lg shadow-lg p-6">
             <form id="createResumeForm" class="space-y-6">
-                <!-- Personal Information -->
                 <div class="space-y-4">
                     <h3 class="text-lg font-medium text-gray-900">Personal Information</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -45,7 +41,6 @@
                     </div>
                 </div>
 
-                <!-- Professional Summary -->
                 <div>
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Professional Summary</h3>
                     <textarea id="summary" name="summary" rows="4" required
@@ -53,7 +48,6 @@
                         placeholder="Write a brief professional summary..."></textarea>
                 </div>
 
-                <!-- Work Experience -->
                 <div>
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Work Experience</h3>
                     <div class="flex items-center mb-4">
@@ -67,30 +61,30 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">Company</label>
-                                    <input type="text" name="company[]" required
+                                    <input type="text" name="company[]" 
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">Position</label>
-                                    <input type="text" name="position[]" required
+                                    <input type="text" name="position[]" 
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 </div>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">Start Date</label>
-                                    <input type="date" name="startDate[]" required
+                                    <input type="date" name="startDate[]" 
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700">End Date</label>
-                                    <input type="date" name="endDate[]" required
+                                    <input type="date" name="endDate[]" 
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 </div>
                             </div>
                             <div class="mt-4">
                                 <label class="block text-sm font-medium text-gray-700">Responsibilities</label>
-                                <textarea name="responsibilities[]" rows="3" required
+                                <textarea name="responsibilities[]" rows="3" 
                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                     placeholder="List your key responsibilities and achievements..."></textarea>
                             </div>
@@ -102,7 +96,6 @@
                     </button>
                 </div>
 
-                <!-- Education -->
                 <div>
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Education</h3>
                     <div id="educationContainer" class="space-y-4">
@@ -382,7 +375,7 @@
             e.preventDefault();
             if (errorAlert) errorAlert.classList.add('hidden');
             if (loadingIndicator) loadingIndicator.classList.remove('hidden');
-
+    
             try {
                 const formData = new FormData(createResumeForm);
                 const data = {
@@ -393,9 +386,20 @@
                     location: formData.get('location'),
                     summary: formData.get('summary'),
                     isFresher: formData.get('isFresher') === 'on',
-                    template: formData.get('template')
-                };
-
+                    template: formData.get('template'),
+                    companies: formData.getAll('company[]').filter(Boolean),
+                    positions: formData.getAll('position[]').filter(Boolean),
+                    startDates: formData.getAll('startDate[]').filter(Boolean),
+                    endDates: formData.getAll('endDate[]').filter(Boolean),
+                    responsibilities: formData.getAll('responsibilities[]').filter(Boolean),
+                    institutions: formData.getAll('institution[]').filter(Boolean),
+                    degrees: formData.getAll('degree[]').filter(Boolean),
+                    eduStartDates: formData.getAll('eduStartDate[]').filter(Boolean),
+                    eduEndDates: formData.getAll('eduEndDate[]').filter(Boolean),
+                    technicalSkills: formData.getAll('technicalSkills[]').filter(Boolean),
+                    softSkills: formData.getAll('softSkills[]').filter(Boolean)
+                  };
+    
                 // Process arrays
                 if (!data.isFresher) {
                     data.companies = formData.getAll('company[]');
@@ -411,16 +415,36 @@
                     data.endDates = [];
                     data.responsibilities = [];
                 }
-
+    
                 data.institutions = formData.getAll('institution[]');
                 data.degrees = formData.getAll('degree[]');
                 data.eduStartDates = formData.getAll('eduStartDate[]');
                 data.eduEndDates = formData.getAll('eduEndDate[]');
                 data.technicalSkills = formData.getAll('technicalSkills[]');
                 data.softSkills = formData.getAll('softSkills[]');
-
-                console.log('Submitting data:', data); // Debug log
-
+    
+                console.log('Submitting data:', {
+                    firstName: formData.get('firstName'),
+                    lastName: formData.get('lastName'),
+                    email: formData.get('email'),
+                    phone: formData.get('phone'),
+                    location: formData.get('location'),
+                    summary: formData.get('summary'),
+                    isFresher: formData.get('isFresher') === 'on',
+                    template: formData.get('template'),
+                    companies: formData.getAll('company[]'),
+                    positions: formData.getAll('position[]'),
+                    startDates: formData.getAll('startDate[]'),
+                    endDates: formData.getAll('endDate[]'),
+                    responsibilities: formData.getAll('responsibilities[]'),
+                    institutions: formData.getAll('institution[]'),
+                    degrees: formData.getAll('degree[]'),
+                    eduStartDates: formData.getAll('eduStartDate[]'),
+                    eduEndDates: formData.getAll('eduEndDate[]'),
+                    technicalSkills: formData.getAll('technicalSkills[]'),
+                    softSkills: formData.getAll('softSkills[]')
+                }); // Debug log
+    
                 // Generate resume
                 const response = await fetch('/create', {
                     method: 'POST',
@@ -429,23 +453,23 @@
                     },
                     body: JSON.stringify(data)
                 });
-
+    
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-
+    
                 const result = await response.json();
                 console.log('Response:', result); // Debug log
-
+    
                 if (!result.success) {
                     throw new Error(result.error || 'Failed to generate resume');
                 }
-
+    
                 // Update preview
                 if (previewArea) {
                     previewArea.innerHTML = result.resume.replace(/\n/g, '<br>');
                 }
-
+    
                 // Create download links if they don't exist
                 let downloadLinks = document.getElementById('downloadLinks');
                 if (!downloadLinks) {
@@ -454,7 +478,7 @@
                     downloadLinks.className = 'mt-4 space-y-2';
                     previewArea.parentNode.insertBefore(downloadLinks, previewArea.nextSibling);
                 }
-
+    
                 // Update download links
                 downloadLinks.innerHTML = `
                     <div class="flex space-x-4">
@@ -468,10 +492,10 @@
                         </a>
                     </div>
                 `;
-
+    
                 // Scroll to preview section
                 previewArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
+    
             } catch (error) {
                 console.error('Error:', error);
                 if (errorAlert) {
