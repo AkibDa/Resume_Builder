@@ -527,6 +527,10 @@ def index():
     """Render the main page."""
     return render_template('index.html')
 
+@app.route('/home')
+def home():
+    return render_template('home.html')
+
 @app.route('/upload', methods=['POST'])
 def upload_resume():
     """Handle resume file upload."""

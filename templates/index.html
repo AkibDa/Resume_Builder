@@ -184,43 +184,84 @@
     });
 
     const jobSuggestions = [
-        "Software engineer with full-stack development experience",
-        "Data analyst with machine learning expertise",
-        "Marketing manager with digital marketing skills",
-        "Financial analyst with risk management experience",
-        "Healthcare administrator with patient care background",
-        "Sales representative with client relationship skills",
-        "HR manager with talent acquisition experience",
-        "Operations manager with process optimization skills"
-    ];
-    
-    jobDescriptionInput.addEventListener('input', (e) => {
-        const value = e.target.value.toLowerCase();
-        if (value.length < 3) {
-            suggestionBox.classList.add('hidden');
-            return;
-        }
-        
-        const matches = jobSuggestions.filter(suggestion => 
-            suggestion.toLowerCase().includes(value)
-        );
-        
-        if (matches.length > 0) {
-            suggestionBox.innerHTML = matches.map(suggestion => 
-                `<div class="suggestion-item p-2 hover:bg-gray-100 cursor-pointer">${suggestion}</div>`
-            ).join('');
-            suggestionBox.classList.remove('hidden');
-        } else {
-            suggestionBox.classList.add('hidden');
-        }
-    });
-    
-    suggestionBox.addEventListener('click', (e) => {
-        if (e.target.classList.contains('suggestion-item')) {
-            jobDescriptionInput.value = e.target.textContent;
-            suggestionBox.classList.add('hidden');
-        }
-    });
+    "Software engineer with full-stack development experience",
+    "Data analyst with machine learning expertise",
+    "Marketing manager with digital marketing skills",
+    "Financial analyst with risk management experience",
+    "Healthcare administrator with patient care background",
+    "Sales representative with client relationship skills",
+    "HR manager with talent acquisition experience",
+    "Operations manager with process optimization skills"
+];
+
+        const debounce = (func, delay) => {
+            let timeout;
+            return (...args) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), delay);
+            };
+        };
+
+        const highlightMatch = (suggestion, value) => {
+            const regex = new RegExp(`(${value})`, 'gi');
+            return suggestion.replace(regex, '<span class="font-bold">$1</span>');
+        };
+
+        jobDescriptionInput.addEventListener('input', debounce((e) => {
+            const value = e.target.value.toLowerCase();
+            if (value.length < 3) {
+                suggestionBox.classList.add('hidden');
+                return;
+            }
+
+            const matches = jobSuggestions.filter(suggestion =>
+                suggestion.toLowerCase().includes(value)
+            );
+
+            if (matches.length > 0) {
+                suggestionBox.innerHTML = matches.map(suggestion =>
+                    `<div class="suggestion-item p-2 hover:bg-gray-100 cursor-pointer">${highlightMatch(suggestion, value)}</div>`
+                ).join('');
+                suggestionBox.classList.remove('hidden');
+            } else {
+                suggestionBox.classList.add('hidden');
+            }
+        }, 300));
+
+        suggestionBox.addEventListener('click', (e) => {
+            if (e.target.classList.contains('suggestion-item')) {
+                jobDescriptionInput.value = e.target.textContent;
+                suggestionBox.classList.add('hidden');
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!jobDescriptionInput.contains(e.target) && !suggestionBox.contains(e.target)) {
+                suggestionBox.classList.add('hidden');
+            }
+        });
+
+        let selectedIndex = -1;
+        jobDescriptionInput.addEventListener('keydown', (e) => {
+            const suggestions = suggestionBox.querySelectorAll('.suggestion-item');
+            if (e.key === 'ArrowDown') {
+                selectedIndex = (selectedIndex + 1) % suggestions.length;
+            } else if (e.key === 'ArrowUp') {
+                selectedIndex = (selectedIndex - 1 + suggestions.length) % suggestions.length;
+            } else if (e.key === 'Enter' && selectedIndex >= 0) {
+                jobDescriptionInput.value = suggestions[selectedIndex].textContent;
+                suggestionBox.classList.add('hidden');
+                return;
+            }
+
+            suggestions.forEach((suggestion, index) => {
+                if (index === selectedIndex) {
+                    suggestion.classList.add('bg-gray-200');
+                } else {
+                    suggestion.classList.remove('bg-gray-200');
+                }
+            });
+        });
     
     if (resumeForm) {
         resumeForm.addEventListener('submit', async (e) => {
