@@ -522,13 +522,13 @@ def generate_blockchain_hash(content: str) -> Dict[str, str]:
             "verification_url": ""
         }
 
-@app.route('/')
-def index():
+@app.route('/build')
+def build():
     """Render the main page."""
     return render_template('index.html')
 
-@app.route('/home')
-def home():
+@app.route('/')
+def index():
     return render_template('home.html')
 
 @app.route('/upload', methods=['POST'])

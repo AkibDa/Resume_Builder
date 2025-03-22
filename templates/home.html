@@ -1,7 +1,57 @@
 {% extends "base.html" %}
 
 {% block content %}
+    <div class="gradient-bg text-white py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-5xl font-bold mb-6">AI-Powered Resume Builder</h1>
+            <p class="text-xl mb-8">Create professional resumes in minutes with the help of AI. Stand out to employers and land your dream job.</p>
+            <div class="space-x-4">
+                <a href="/create" class="bg-white text-indigo-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition duration-300">
+                    Create Resume
+                </a>
+                <a href="/" class="bg-transparent border border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-indigo-600 transition duration-300">
+                    Upload Resume
+                </a>
+            </div>
+        </div>
+    </div>
 
+    <div class="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold text-center mb-12">Why Choose AI Resume Builder?</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="bg-white p-8 rounded-lg shadow-lg text-center">
+                <div class="text-indigo-600 text-4xl mb-4">
+                    <i class="fas fa-magic"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-4">AI-Powered Suggestions</h3>
+                <p class="text-gray-600">Get real-time suggestions to improve your resume and make it stand out to employers.</p>
+            </div>
 
+            <div class="bg-white p-8 rounded-lg shadow-lg text-center">
+                <div class="text-indigo-600 text-4xl mb-4">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-4">Multiple Formats</h3>
+                <p class="text-gray-600">Download your resume in PDF or DOCX format with just one click.</p>
+            </div>
 
+            <div class="bg-white p-8 rounded-lg shadow-lg text-center">
+                <div class="text-indigo-600 text-4xl mb-4">
+                    <i class="fas fa-user-check"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-4">ATS-Friendly</h3>
+                <p class="text-gray-600">Optimized for Applicant Tracking Systems to ensure your resume gets noticed.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="gradient-bg text-white py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-4xl font-bold mb-6">Ready to Build Your Resume?</h2>
+            <p class="text-xl mb-8">Start creating your professional resume today and take the first step toward your dream job.</p>
+            <a href="/create" class="bg-white text-indigo-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition duration-300">
+                Get Started Now
+            </a>
+        </div>
+    </div>
 {% endblock %}
